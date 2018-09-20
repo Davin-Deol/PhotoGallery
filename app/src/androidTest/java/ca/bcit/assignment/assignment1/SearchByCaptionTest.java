@@ -75,9 +75,11 @@ public class SearchByCaptionTest {
         Bitmap icon = null;
         FileOutputStream fos = null;
 
-        Context context = InstrumentationRegistry.getContext();
+        Context context = InstrumentationRegistry.getTargetContext();
         ContextWrapper cw = new ContextWrapper(context);
-        File directory = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "/Android/data/ca.bcit.assignment.assignment1/files/Pictures");
+        //File directory = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "/Android/data/ca.bcit.assignment.assignment1/files/Pictures");
+
+        File directory = cw.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
         db = AppDatabase.getInstance(context);
         dao = db.captionDao();
@@ -100,6 +102,7 @@ public class SearchByCaptionTest {
 
             filePaths.add(file.getAbsolutePath());
             dao.insertCaptions(new Caption(fileName));
+
         }
     }
 
@@ -119,6 +122,7 @@ public class SearchByCaptionTest {
 
     @Test
     public void searchByCaptionTest() {
+        Caption[] captions = dao.loadAllCaptions();
         ViewInteraction rightButton = onView(withId(R.id.rightButton));
 
         ViewInteraction textInputEditText = onView(
