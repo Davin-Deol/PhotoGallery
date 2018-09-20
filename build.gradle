@@ -24,3 +24,11 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+task printProperties {
+    doLast {
+        println "Testing"
+        println "123"
+        println "Ending"
+    }
+}
