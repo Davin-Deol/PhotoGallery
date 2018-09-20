@@ -6,7 +6,7 @@ public class DataStorageImp implements IDataStore {
     public void saveState(String state) {
         state_ = state;
     }
-    
+
     public String getState() {
         return state_;
     }
