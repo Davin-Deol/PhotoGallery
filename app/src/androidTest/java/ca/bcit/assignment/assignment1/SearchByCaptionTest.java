@@ -90,7 +90,7 @@ public class SearchByCaptionTest {
             String fileName = i + ".jpg";
             file = new File(directory, fileName);
 
-            icon = Bitmap.createBitmap(10, 10, Bitmap.Config.RGB_565);
+            icon = Bitmap.createBitmap(100, 100, Bitmap.Config.RGB_565);
 
             try {
                 fos = new FileOutputStream(file);
