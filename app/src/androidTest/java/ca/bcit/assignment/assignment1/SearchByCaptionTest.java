@@ -104,6 +104,9 @@ public class SearchByCaptionTest {
             dao.insertCaptions(new Caption(fileName));
 
         }
+        Intent i = mActivityTestRule.getActivity().getIntent();
+        mActivityTestRule.finishActivity();
+        mActivityTestRule.launchActivity(i);
     }
 
     @After
