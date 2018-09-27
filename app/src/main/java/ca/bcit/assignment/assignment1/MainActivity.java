@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_TAKE_PHOTO = 2;
     private AppDatabase db;
     private String searchCaption = null;
-    private String x;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
