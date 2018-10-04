@@ -1,17 +1,26 @@
 package ca.bcit.assignment.assignment1;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -19,9 +28,6 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import android.text.format.DateFormat;
 import android.widget.Toast;
 
@@ -30,16 +36,18 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import ca.bcit.assignment.assignment1.database.AppDatabase;
 import ca.bcit.assignment.assignment1.models.Caption;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LocationListener {
 
     private ImageView displayImageView;
     private ImageButton leftImageButton;
     private ImageButton rightImageButton;
     private TextView timestampTextView;
+    private TextView locationTextView;
     private TextInputLayout captionInputLayout;
     private Button updateCaptionButton;
     private Button searchButton;
@@ -52,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_TAKE_PHOTO = 2;
     private AppDatabase db;
     private String searchCaption = null;
+    private LocationManager locationManager;
+    private Geocoder geocoder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,10 +74,13 @@ public class MainActivity extends AppCompatActivity {
         leftImageButton = (ImageButton) findViewById(R.id.leftButton);
         rightImageButton = (ImageButton) findViewById(R.id.rightButton);
         timestampTextView = (TextView) findViewById(R.id.timestamp);
+        locationTextView = (TextView) findViewById(R.id.locationTextView);
         captionInputLayout = (TextInputLayout) findViewById(R.id.captionInputLayout);
         updateCaptionButton = (Button) findViewById(R.id.updateCaptionButton);
         searchButton = (Button) findViewById(R.id.searchButton);
         snapButton = (Button) findViewById(R.id.snapButton);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
 
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
@@ -161,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 dispatchTakePictureIntent();
             }
         });
+
     }
 
     @Override
@@ -169,6 +183,41 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 400, 1, MainActivity.this);
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.removeUpdates(this);
+        }
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+    }
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
+    @Override
+    public void onProviderEnabled(String provider) {
+    }
+    @Override
+    public void onProviderDisabled(String provider) {
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+                locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    }
 
     private ArrayList<String> populateGallery(Date minDate, Date maxDate) {
         File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "/Android/data/ca.bcit.assignment.assignment1/files/Pictures");
@@ -190,15 +239,21 @@ public class MainActivity extends AppCompatActivity {
 
     private void displayPhoto(String path) {
         Caption caption = db.captionDao().findCaptionByImage(currentPhotoFileName);
+        String captionString = caption.getCaption();
+        String location = caption.getLocation();
 
         displayImageView.setImageBitmap(BitmapFactory.decodeFile(path));
         DateFormat dateFormat = new DateFormat();
         timestampTextView.setText(dateFormat.format("yyyy-MM-dd HH:mm:ss", caption.getWhenCreated()));
 
-        if (caption.getCaption() != null) {
-            captionInputLayout.getEditText().setText(caption.getCaption());
+        if (captionString != null) {
+            captionInputLayout.getEditText().setText(captionString);
         } else {
             captionInputLayout.getEditText().setText("");
+        }
+
+        if (location != null) {
+            locationTextView.setText(location);
         }
 
         captionInputLayout.getEditText().clearFocus();
@@ -209,6 +264,19 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (((requestCode == REQUEST_IMAGE_CAPTURE) || (requestCode == REQUEST_TAKE_PHOTO)) && resultCode == RESULT_OK) {
             Caption caption = new Caption(currentPhotoFileName);
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                try {
+                    List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                    Address address = addresses.get(0);
+                    String locationString = address.getLocality() + ", " + address.getAdminArea() + ", " + address.getCountryName();
+                    caption.setLocation(locationString);
+                } catch (IOException ioe) {
+                    Log.d("IO Exception Caught: ", ioe.getMessage());
+                }
+            }
+
             db.captionDao().insertCaptions(caption);
 
             photoGallery = populateGallery(new Date(Long.MIN_VALUE), new Date(Long.MAX_VALUE));

@@ -20,6 +20,9 @@ public interface CaptionDao {
     @Query("SELECT * FROM Caption")
     public Caption[] loadAllCaptions();
 
+    @Query("SELECT DISTINCT location FROM Caption")
+    public List<String> getAllLocations();
+
     @Query("SELECT * FROM Caption WHERE image = :image LIMIT 1")
     public Caption findCaptionByImage(String image);
 

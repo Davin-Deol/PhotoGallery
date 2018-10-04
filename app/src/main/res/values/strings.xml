@@ -6,6 +6,7 @@
     <string name="captionHint">Caption</string>
     <string name="updateCaptionButtonLabel">Update</string>
     <string name="timestampDefault">dd/mm/yyyy hh:ss</string>
+    <string name="locationDefault">location unknown</string>
 
     <string name="startDateLabel">Start Date</string>
     <string name="endDateLabel">End Date</string>
