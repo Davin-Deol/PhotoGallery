@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
     private AppDatabase db;
     private String searchCaption = null;
 
-    private String x;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
