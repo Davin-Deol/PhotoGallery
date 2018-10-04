@@ -3,24 +3,35 @@ package ca.bcit.assignment.assignment1;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CalendarView;
+import android.widget.CheckBox;
 import android.widget.DatePicker;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+
+import ca.bcit.assignment.assignment1.database.AppDatabase;
 
 public class SearchActivity extends AppCompatActivity {
 
@@ -32,6 +43,8 @@ public class SearchActivity extends AppCompatActivity {
     private TimePicker endTimePicker;
     private Button applyFiltersButton;
     private TextInputLayout captionInputLayout;
+    private ListView locationListView;
+    private AppDatabase db;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +57,9 @@ public class SearchActivity extends AppCompatActivity {
         endTimePicker = (TimePicker) findViewById(R.id.endTimePicker);
         applyFiltersButton = (Button) findViewById(R.id.applyFiltersButton);
         captionInputLayout = (TextInputLayout) findViewById(R.id.captionInputLayout);
+        locationListView = (ListView) findViewById(R.id.locationListView);
+
+        db = AppDatabase.getInstance(this);
 
         startTimePicker.setCurrentHour(0);
         startTimePicker.setCurrentMinute(0);
@@ -72,5 +88,40 @@ public class SearchActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        List<String> locations = db.captionDao().getAllLocations();
+        CustomAdapter customAdapter = new CustomAdapter(locations, SearchActivity.this);
+        locationListView.setAdapter(customAdapter);
+    }
+
+    public class CustomAdapter extends ArrayAdapter<String> {
+
+        private List<String> dataSet;
+        Context mContext;
+
+        public CustomAdapter(List<String> data, Context context) {
+            super(context, R.layout.filter_location_listitem, data);
+            this.dataSet = data;
+            this.mContext=context;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // Get the data item for this position
+            String location = getItem(position);
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.filter_location_listitem, parent, false);
+            }
+            CheckBox checkBox = (CheckBox) convertView.findViewById(R.id.checkBox);
+
+            if (location == null) {
+                checkBox.setText(R.string.locationDefault);
+            } else {
+                checkBox.setText(location);
+            }
+
+            // Return the completed view to render on screen
+            return convertView;
+        }
     }
 }

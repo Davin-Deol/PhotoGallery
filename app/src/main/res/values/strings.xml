@@ -10,5 +10,6 @@
 
     <string name="startDateLabel">Start Date</string>
     <string name="endDateLabel">End Date</string>
+    <string name="locationDefaultListItem">n/a</string>
     <string name="applyFiltersButtonLabel">Search</string>
 </resources>

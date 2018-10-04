@@ -254,6 +254,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         if (location != null) {
             locationTextView.setText(location);
+        } else {
+            locationTextView.setText(R.string.locationDefault);
         }
 
         captionInputLayout.getEditText().clearFocus();
@@ -269,9 +271,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 try {
                     List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                    Address address = addresses.get(0);
-                    String locationString = address.getLocality() + ", " + address.getAdminArea() + ", " + address.getCountryName();
-                    caption.setLocation(locationString);
+                    if (addresses.size() != 0) {
+                        Address address = addresses.get(0);
+                        String locationString = address.getLocality() + ", " + address.getAdminArea() + ", " + address.getCountryName();
+                        caption.setLocation(locationString);
+                    }
                 } catch (IOException ioe) {
                     Log.d("IO Exception Caught: ", ioe.getMessage());
                 }
