@@ -27,11 +27,11 @@ public interface CaptionDao {
     @Query("SELECT * FROM Caption WHERE image = :image LIMIT 1")
     public Caption findCaptionByImage(String image);
 
-    @Query("SELECT * FROM Caption WHERE (whenCreated BETWEEN :from AND :to) AND (caption LIKE :search)")
-    public List<Caption> findImagesWithCaptionBetweenDates(Date from, Date to, String search);
+    @Query("SELECT * FROM Caption WHERE (whenCreated BETWEEN :from AND :to) AND (caption LIKE :search) AND (location IN (:locations))")
+    public List<Caption> findImagesByCaptionDatesLocation(Date from, Date to, String search, String[] locations);
 
-    @Query("SELECT * FROM Caption WHERE whenCreated BETWEEN :from AND :to")
-    public List<Caption> findImagesBetweenDates(Date from, Date to);
+    @Query("SELECT * FROM Caption WHERE (whenCreated BETWEEN :from AND :to) AND (location IN (:locations))")
+    public List<Caption> findImagesByDatesLocation(Date from, Date to, String[] locations);
 
     @Update
     public void updateCaptions(Caption... captions);

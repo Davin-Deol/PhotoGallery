@@ -45,6 +45,7 @@ public class SearchActivity extends AppCompatActivity {
     private TextInputLayout captionInputLayout;
     private ListView locationListView;
     private AppDatabase db;
+    private ArrayList<String> checkedLocations;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +61,8 @@ public class SearchActivity extends AppCompatActivity {
         locationListView = (ListView) findViewById(R.id.locationListView);
 
         db = AppDatabase.getInstance(this);
+
+        checkedLocations = new ArrayList<>();
 
         startTimePicker.setCurrentHour(0);
         startTimePicker.setCurrentMinute(0);
@@ -85,6 +88,7 @@ public class SearchActivity extends AppCompatActivity {
                     intent.putExtra("Caption", caption);
                 }
 
+                intent.putExtra("Locations", checkedLocations.toArray(new String[0]));
                 startActivity(intent);
             }
         });
@@ -106,19 +110,36 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
             // Get the data item for this position
             String location = getItem(position);
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.filter_location_listitem, parent, false);
             }
-            CheckBox checkBox = (CheckBox) convertView.findViewById(R.id.checkBox);
+            final CheckBox checkBox = (CheckBox) convertView.findViewById(R.id.checkBox);
 
-            if (location == null) {
+            if (location.equals("")) {
                 checkBox.setText(R.string.locationDefault);
+                checkedLocations.add("");
             } else {
                 checkBox.setText(location);
+                checkedLocations.add(checkBox.getText().toString());
             }
+
+            checkBox.setChecked(true);
+            final View v = convertView;
+
+            checkBox.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    if (checkBox.isChecked()) {
+                        checkedLocations.add(getItem(position));
+                    } else {
+                        checkedLocations.remove(position);
+                    }
+                }
+            });
 
             // Return the completed view to render on screen
             return convertView;

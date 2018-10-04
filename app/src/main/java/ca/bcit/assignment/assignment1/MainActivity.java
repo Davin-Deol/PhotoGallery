@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private String searchCaption = null;
     private LocationManager locationManager;
     private Geocoder geocoder;
+    private String[] locationsArray;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,10 +104,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             minDate = cl.getTime();
             cl.set(endYear, endMonth, endDay, endHour, endMinute);
             maxDate = cl.getTime();
+            locationsArray = extras.getStringArray("Locations");
         } else {
             minDate = new Date(Long.MIN_VALUE);
             maxDate = new Date(Long.MAX_VALUE);
+            locationsArray = db.captionDao().getAllLocations().toArray(new String[0]);
         }
+
         photoGallery = populateGallery(minDate, maxDate);
         if (photoGallery.size() > 0) {
             currentPhotoPath = photoGallery.get(currentPhotoIndex);
@@ -174,7 +178,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 dispatchTakePictureIntent();
             }
         });
-
     }
 
     @Override
@@ -182,7 +185,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         AppDatabase.destroyInstance();
         super.onDestroy();
     }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -225,13 +227,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         List<Caption> captions = null;
         if (searchCaption != null)
-            captions = db.captionDao().findImagesWithCaptionBetweenDates(minDate, maxDate, "%" + searchCaption + "%");
+            captions = db.captionDao().findImagesByCaptionDatesLocation(minDate, maxDate, "%" + searchCaption + "%", locationsArray);
         else
-            captions = db.captionDao().findImagesBetweenDates(minDate, maxDate);
+            captions = db.captionDao().findImagesByDatesLocation(minDate, maxDate, locationsArray);
 
         for (Caption c : captions) {
             String path = file.getPath();
             photoGallery.add(path + "/" + c.getImage());
+            if (c.getLocation() == null) {
+                c.setLocation("");
+                db.captionDao().updateCaptions(c);
+            }
         }
 
         return photoGallery;
@@ -252,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             captionInputLayout.getEditText().setText("");
         }
 
-        if (location != null) {
+        if (!location.equals("")) {
             locationTextView.setText(location);
         } else {
             locationTextView.setText(R.string.locationDefault);
@@ -275,6 +281,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         Address address = addresses.get(0);
                         String locationString = address.getLocality() + ", " + address.getAdminArea() + ", " + address.getCountryName();
                         caption.setLocation(locationString);
+                    } else {
+                        caption.setLocation("");
                     }
                 } catch (IOException ioe) {
                     Log.d("IO Exception Caught: ", ioe.getMessage());
