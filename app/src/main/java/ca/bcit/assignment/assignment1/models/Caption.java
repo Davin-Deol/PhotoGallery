@@ -29,6 +29,7 @@ public class Caption {
         setImage(image);
         setCaption(null);
         setWhenCreated(new Date());
+        setLocation("");
     }
 
     public void setImage(String image) {

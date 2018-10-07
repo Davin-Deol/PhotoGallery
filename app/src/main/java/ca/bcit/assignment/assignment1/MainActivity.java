@@ -31,9 +31,12 @@ import java.io.IOException;
 import android.text.format.DateFormat;
 import android.widget.Toast;
 
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -62,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private String searchCaption = null;
     private LocationManager locationManager;
     private Geocoder geocoder;
-    private String[] locationsArray;
+    private ArrayList<String> locationsArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +73,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         setContentView(R.layout.activity_main);
 
         db = AppDatabase.getInstance(this);
+
+        /*
+        // Clear data code
+        File directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        Caption[] captions = db.captionDao().loadAllCaptions();
+
+        for (Caption c : captions) {
+            File file = new File(directory, c.getImage());
+            file.delete();
+        }
+
+        db.captionDao().deleteCaptions(captions);
+        */
 
         displayImageView = (ImageView) findViewById(R.id.displayImageView);
         leftImageButton = (ImageButton) findViewById(R.id.leftButton);
@@ -83,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
 
+        locationsArrayList = new ArrayList<>();
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         Date minDate = null;
@@ -104,11 +121,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             minDate = cl.getTime();
             cl.set(endYear, endMonth, endDay, endHour, endMinute);
             maxDate = cl.getTime();
-            locationsArray = extras.getStringArray("Locations");
+            Collections.addAll(locationsArrayList, extras.getStringArray("Locations"));
         } else {
             minDate = new Date(Long.MIN_VALUE);
             maxDate = new Date(Long.MAX_VALUE);
-            locationsArray = db.captionDao().getAllLocations().toArray(new String[0]);
+            Collections.addAll(locationsArrayList,  db.captionDao().getAllLocations().toArray(new String[0]));
         }
 
         photoGallery = populateGallery(minDate, maxDate);
@@ -227,9 +244,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         List<Caption> captions = null;
         if (searchCaption != null)
-            captions = db.captionDao().findImagesByCaptionDatesLocation(minDate, maxDate, "%" + searchCaption + "%", locationsArray);
+            captions = db.captionDao().findImagesByCaptionDatesLocation(minDate, maxDate, "%" + searchCaption + "%", locationsArrayList.toArray(new String[0]));
         else
-            captions = db.captionDao().findImagesByDatesLocation(minDate, maxDate, locationsArray);
+            captions = db.captionDao().findImagesByDatesLocation(minDate, maxDate, locationsArrayList.toArray(new String[0]));
 
         for (Caption c : captions) {
             String path = file.getPath();
@@ -275,24 +292,30 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                try {
-                    List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                    if (addresses.size() != 0) {
-                        Address address = addresses.get(0);
-                        String locationString = address.getLocality() + ", " + address.getAdminArea() + ", " + address.getCountryName();
-                        caption.setLocation(locationString);
-                    } else {
-                        caption.setLocation("");
+                if (location == null) {
+                    try {
+                        List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                        if (addresses.size() != 0) {
+                            Address address = addresses.get(0);
+                            String locationString = address.getLocality() + ", " + address.getAdminArea() + ", " + address.getCountryName();
+                            caption.setLocation(locationString);
+                        }
+                    } catch (IOException ioe) {
+                        Log.d("IO Exception Caught: ", ioe.getMessage());
                     }
-                } catch (IOException ioe) {
-                    Log.d("IO Exception Caught: ", ioe.getMessage());
                 }
             }
 
             db.captionDao().insertCaptions(caption);
 
+            locationsArrayList.add(caption.getLocation());
+
             photoGallery = populateGallery(new Date(Long.MIN_VALUE), new Date(Long.MAX_VALUE));
-            currentPhotoIndex = photoGallery.size() - 1;
+
+            if (photoGallery.size() > 0) {
+                currentPhotoIndex = photoGallery.size() - 1;
+            }
+
             currentPhotoPath = photoGallery.get(currentPhotoIndex);
             displayPhoto(currentPhotoPath);
             galleryAddPic();

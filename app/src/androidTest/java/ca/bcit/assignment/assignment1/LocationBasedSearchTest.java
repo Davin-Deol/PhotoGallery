@@ -1,24 +1,15 @@
 package ca.bcit.assignment.assignment1;
 
 
-import android.app.Activity;
-import android.app.Instrumentation;
-import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ColorSpace;
-import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.espresso.ViewInteraction;
-import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.v4.content.ContextCompat;
 import android.test.suitebuilder.annotation.LargeTest;
 import android.util.Log;
 import android.view.View;
@@ -48,43 +39,38 @@ import static android.support.test.espresso.Espresso.pressBack;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static android.support.test.espresso.action.ViewActions.replaceText;
-import static android.support.test.espresso.action.ViewActions.scrollTo;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
-import static android.support.test.espresso.intent.Intents.intended;
-import static android.support.test.espresso.intent.Intents.intending;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.toPackage;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static android.support.test.espresso.matcher.ViewMatchers.withParent;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.allOf;
 
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-public class SearchByCaptionTest {
-
+public class LocationBasedSearchTest {
     private AppDatabase db;
     private CaptionDao dao;
-    private ArrayList<String> filePaths = null;
+    private ArrayList<String> fileNames = null;
+    File directory;
     @Rule
     public ActivityTestRule<MainActivity> mActivityTestRule = new ActivityTestRule<>(MainActivity.class);
 
     @Before
     public void createDb() {
         File file = null;
-        String path = null;
         Bitmap icon = null;
         FileOutputStream fos = null;
-
+        Caption caption = null;
         Context context = InstrumentationRegistry.getTargetContext();
         ContextWrapper cw = new ContextWrapper(context);
-        //File directory = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "/Android/data/ca.bcit.assignment.assignment1/files/Pictures");
 
-        File directory = cw.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        directory = cw.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
         db = AppDatabase.getInstance(context);
         dao = db.captionDao();
 
-        filePaths = new ArrayList<>();
+        fileNames = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
             String fileName = i + ".jpg";
@@ -100,8 +86,16 @@ public class SearchByCaptionTest {
                 Log.d("Exception Caught: ", e.getMessage());
             }
 
-            filePaths.add(file.getAbsolutePath());
-            dao.insertCaptions(new Caption(fileName));
+            fileNames.add(fileName);
+            caption = new Caption(fileName);
+            switch (i) {
+                case (0):
+                    caption.setLocation("Vancouver, British Columbia, Canada");
+                    break;
+                default:
+                    break;
+            }
+            dao.insertCaptions(caption);
 
         }
         Intent i = mActivityTestRule.getActivity().getIntent();
@@ -112,22 +106,19 @@ public class SearchByCaptionTest {
     @After
     public void closeDb() throws IOException {
         File file = null;
-        Caption[] captions = dao.loadAllCaptions();
+        Caption caption = null;
 
-        for (String filePath : filePaths) {
-            file = new File(filePath);
+        for (String fileName : fileNames) {
+            caption = dao.findCaptionByImage(fileName);
+            file = new File(directory, fileName);
             file.delete();
+            dao.deleteCaptions(caption);
         }
 
-        dao.deleteCaptions(captions);
         db.close();
     }
-
     @Test
-    public void searchByCaptionTest() {
-        Caption[] captions = dao.loadAllCaptions();
-        ViewInteraction rightButton = onView(withId(R.id.rightButton));
-
+    public void locationBasedSearchTest() {
         ViewInteraction textInputEditText = onView(
                 allOf(childAtPosition(
                         childAtPosition(
@@ -135,7 +126,7 @@ public class SearchByCaptionTest {
                                 0),
                         0),
                         isDisplayed()));
-        textInputEditText.perform(replaceText("Red"), closeSoftKeyboard());
+        textInputEditText.perform(replaceText("bpSfhJbW"), closeSoftKeyboard());
 
         ViewInteraction appCompatButton2 = onView(
                 allOf(withId(R.id.updateCaptionButton), withText("Update"),
@@ -143,10 +134,18 @@ public class SearchByCaptionTest {
                                 childAtPosition(
                                         withId(android.R.id.content),
                                         0),
-                                6),
+                                7),
                         isDisplayed()));
         appCompatButton2.perform(click());
 
+        ViewInteraction rightButton = onView(
+                allOf(withId(R.id.rightButton),
+                        childAtPosition(
+                                childAtPosition(
+                                        withId(android.R.id.content),
+                                        0),
+                                3),
+                        isDisplayed()));
         rightButton.perform(click());
 
         ViewInteraction textInputEditText2 = onView(
@@ -156,7 +155,7 @@ public class SearchByCaptionTest {
                                 0),
                         0),
                         isDisplayed()));
-        textInputEditText2.perform(replaceText("Red2"), closeSoftKeyboard());
+        textInputEditText2.perform(replaceText("wJpyUHTa"), closeSoftKeyboard());
 
         ViewInteraction appCompatButton4 = onView(
                 allOf(withId(R.id.updateCaptionButton), withText("Update"),
@@ -164,7 +163,7 @@ public class SearchByCaptionTest {
                                 childAtPosition(
                                         withId(android.R.id.content),
                                         0),
-                                6),
+                                7),
                         isDisplayed()));
         appCompatButton4.perform(click());
 
@@ -177,7 +176,7 @@ public class SearchByCaptionTest {
                                 0),
                         0),
                         isDisplayed()));
-        textInputEditText3.perform(replaceText("Green"), closeSoftKeyboard());
+        textInputEditText3.perform(replaceText("qHREmApd"), closeSoftKeyboard());
 
         ViewInteraction appCompatButton6 = onView(
                 allOf(withId(R.id.updateCaptionButton), withText("Update"),
@@ -185,9 +184,11 @@ public class SearchByCaptionTest {
                                 childAtPosition(
                                         withId(android.R.id.content),
                                         0),
-                                6),
+                                7),
                         isDisplayed()));
         appCompatButton6.perform(click());
+
+        rightButton.perform(click());
 
         ViewInteraction appCompatButton7 = onView(
                 allOf(withId(R.id.searchButton), withText("Filter"),
@@ -195,17 +196,17 @@ public class SearchByCaptionTest {
                                 childAtPosition(
                                         withId(android.R.id.content),
                                         0),
-                                7),
+                                8),
                         isDisplayed()));
         appCompatButton7.perform(click());
 
-        ViewInteraction textInputEditText4 = onView(
-                childAtPosition(
+        ViewInteraction appCompatCheckBox = onView(
+                allOf(withId(R.id.checkBox), withText("location unknown"),
                         childAtPosition(
-                                withId(R.id.captionInputLayout),
+                                withParent(withId(R.id.locationListView)),
                                 0),
-                        0));
-        textInputEditText4.perform(scrollTo(), replaceText("Red"), closeSoftKeyboard());
+                        isDisplayed()));
+        appCompatCheckBox.perform(click());
 
         ViewInteraction appCompatButton8 = onView(
                 allOf(withId(R.id.applyFiltersButton), withText("Search"),
@@ -213,59 +214,19 @@ public class SearchByCaptionTest {
                                 childAtPosition(
                                         withId(android.R.id.content),
                                         0),
-                                1),
+                                4),
                         isDisplayed()));
         appCompatButton8.perform(click());
 
-        ViewInteraction editText = onView(
-                allOf(withText("Red"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(R.id.captionInputLayout),
-                                        0),
-                                0),
-                        isDisplayed()));
-        editText.check(matches(withText("Red")));
-
-        ViewInteraction appCompatImageButton = onView(
-                allOf(withId(R.id.rightButton),
+        ViewInteraction textView = onView(
+                allOf(withId(R.id.locationTextView), withText("Vancouver, British Columbia, Canada"),
                         childAtPosition(
                                 childAtPosition(
                                         withId(android.R.id.content),
                                         0),
-                                3),
+                                5),
                         isDisplayed()));
-        appCompatImageButton.perform(click());
-
-        ViewInteraction editText2 = onView(
-                allOf(withText("Red2"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(R.id.captionInputLayout),
-                                        0),
-                                0),
-                        isDisplayed()));
-        editText2.check(matches(withText("Red2")));
-
-        ViewInteraction appCompatImageButton2 = onView(
-                allOf(withId(R.id.rightButton),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                3),
-                        isDisplayed()));
-        appCompatImageButton2.perform(click());
-
-        ViewInteraction editText3 = onView(
-                allOf(withText("Red"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(R.id.captionInputLayout),
-                                        0),
-                                0),
-                        isDisplayed()));
-        editText3.check(matches(withText("Red")));
+        textView.check(matches(withText("Vancouver, British Columbia, Canada")));
 
     }
 

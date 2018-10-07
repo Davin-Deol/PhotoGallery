@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.List;
 
 import ca.bcit.assignment.assignment1.database.AppDatabase;
+import ca.bcit.assignment.assignment1.models.Caption;
 
 public class SearchActivity extends AppCompatActivity {
 
@@ -49,6 +50,7 @@ public class SearchActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_search);
         startDateTextView = (TextView) findViewById(R.id.startTextView);
         startDatePicker = (DatePicker) findViewById(R.id.startDatePicker);

@@ -33,6 +33,9 @@ public interface CaptionDao {
     @Query("SELECT * FROM Caption WHERE (whenCreated BETWEEN :from AND :to) AND (location IN (:locations))")
     public List<Caption> findImagesByDatesLocation(Date from, Date to, String[] locations);
 
+    @Query("SELECT * FROM Caption WHERE (whenCreated BETWEEN :from AND :to)")
+    public List<Caption> findImagesByDates(Date from, Date to);
+
     @Update
     public void updateCaptions(Caption... captions);
 
