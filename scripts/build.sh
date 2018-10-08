@@ -6,7 +6,11 @@ buildType=$2
 storePass=$3
 keyAlias=$4
 keyPass=$5
-
+echo "branchName = $branchName"
+echo "buildType = $buildType"
+echo "storePass = $storePass"
+echo "keyAlias = $keyAlias"
+echo "keyPass = $keyPass"
 # helper method
 setProperty() {
 	sed -i.bak -e "s/\($1 *= *\).*/\1$2/" ${propertiesFile}
