@@ -41,7 +41,7 @@ if [ $buildType = 'debug' ]; then
 elif [ $buildType = 'release' ]; then
 	./gradlew assembleRelease --stacktrace
 fi
-
+echo $buildType
 # -----------------------------------------------------------------
 # -------------------------- POST BUILD ---------------------------
 # -----------------------------------------------------------------
