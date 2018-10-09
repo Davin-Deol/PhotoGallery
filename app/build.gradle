@@ -14,6 +14,7 @@ android {
                 arguments = ["rooms.schemaLocation" : "$projectDir/schemas".toString()]
             }
         }
+        multiDexEnabled true
     }
     signingConfigs {
         config
@@ -24,11 +25,13 @@ android {
                 shrinkResources true
                 proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             }
+        /*
             debug {
                 minifyEnabled true
                 shrinkResources true
                 proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-debug-rules.pro'
             }
+            */
     }
     configurations.all {
         resolutionStrategy.force 'com.google.code.findbugs:jsr305:1.3.9'
